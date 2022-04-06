@@ -6,6 +6,10 @@ import base64
 from Crypto.Cipher import DES3
 from Crypto.Util.Padding import pad
 import logging
+# 第三方库yagmail 基于SMTP发送邮件
+import yagmail
+# literal_eval可以将响应体返回的字符串转为字典
+from ast import literal_eval
 
 #根据抓包信息修改以下变量的值，这些变量用于构建请求头
 cookie = "你抓到的安卓包中,druidv6.if.qidian.com/argus/api/v2/下的包的cookie"
@@ -64,6 +68,11 @@ def getstamp():
     now = time.time()
     return int(round(now * 1000))
 
+# 遇到异常时发邮件通知 参数to是收件人邮箱，参数subject是主题，参数contents是邮件正文，参数attachments是附件（传入文件路径 没有可以穿入None）
+def send_email(title,contents,to,filepath):
+    yag = yagmail.SMTP(user='你的163邮箱',password='你的授权客户端密码',host='smtp.163.com')
+    yag.send(to=to,subject=title,contents=[contents],attachments=filepath)
+
 # 构建请求头
 def buildHearders():
     headers["Cookie"] = cookie
@@ -81,6 +90,14 @@ def sign():
     #将发送签到后得到的响应信息取出并从json格式转回字典
     # print(result.content.decode("utf-8"))
     logging.info(result.content.decode("utf-8"))
+    
+    # 得到响应体 并将其从字符串转为字典 格式为{"data":{},"Message":"","Result":数字}
+    msg = literal_eval(result.content.decode("utf-8"))
+
+    # 如果遭遇签到异常发消息给指定邮箱
+    if msg.get("Result") != 0:
+        send_email('起点app自动签到异常',result.content.decode("utf-8"),'目标邮箱地址',filepath=None)
+    
     return json.loads(result.content)
 
 # 用死循环实现定时任务
