@@ -87,7 +87,7 @@ def sign():
     # 显示日期
     getTime()
  
-    #将发送签到后得到的响应信息取出并从json格式转回字典
+    # 将发送签到后得到的响应信息存入日志文件中
     # print(result.content.decode("utf-8"))
     logging.info(result.content.decode("utf-8"))
     
